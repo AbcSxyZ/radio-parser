@@ -15,8 +15,11 @@ class RadioTable:
     links.
     """
     AVAILABLE_TAG = ["name", "call sign"]
-    def __init__(self, table):
-        self.radios = []
+    def __init__(self, table=[], list=[]):
+        self.radios = list
+        if self.radios:
+            self.link_converter()
+            return None
         self.ast_table = table
         self.table = table.data()
         self.fields = self._get_fields()
@@ -48,23 +51,30 @@ class RadioTable:
     def get_list_radio(self):
         """
         Create a list with all available radios from a single table.
-        Using Radio object for interfacig a single radio station.
         """
         #Get the index on radio in the table, and keep a list of name
         index_radio = self.fields.index(self._radio_colname)
-        list_radio = [row[index_radio] for row in self.table[1:]]
+        self.radios = [row[index_radio] for row in self.table[1:]]
+        self.link_converter()
 
-        #Create Radio object for each table cell
-        for radio_cell in list_radio:
-            radio_cell = wtp.parse(radio_cell)
-            have_wiki = False
-            if radio_cell.wikilinks:
-                have_wiki = True
-                radio_name = radio_cell.wikilinks[0].title
+    def link_converter(self):
+        """
+        Convert wikitext of radio name into a Radio element.
+        Check if a link is available to the given radio.
+        """
+        for index, radio_field in enumerate(self.radios):
+            radio_field = wtp.parse(radio_field)
+            have_wiki = True if radio_field.wikilinks else False
+            if have_wiki:
+                radio_name = radio_field.wikilinks[0].title
             else:
-                have_wiki = False
-                radio_name = str(radio_cell)
+                radio_name = str(radio_field)
 
-            #Fill our radio list contained by a RadioTable.
-            self.radios.append(Radio(radio_name, have_wiki))
+            #replace raw wikitext by a Radio element
+            self.radios[index] = Radio(radio_name, have_wiki)
 
+    def __str__(self):
+        return " | ".join(map(str, self.radios))
+
+    def __repr__(self):
+        return self.__str__()

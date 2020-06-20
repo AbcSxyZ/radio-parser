@@ -25,9 +25,7 @@ class WikiSearch:
         except LookupError:
             raise PageNotExists("\"{}\" not found.".format(title))
 
-        parsed_page = PageInfo(page, self.client)
-        # import code
-        # code.interact(local=locals())
+        parsed_page = PageInfo(page)
         return parsed_page
 
 

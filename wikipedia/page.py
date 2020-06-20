@@ -23,10 +23,9 @@ class PageInfo:
 
     RADIO = 1
     LIST = 0
-    def __init__(self, page, site):
-        self.page = page
-        self.site = site
-        self.ast = wtp.parse(self.page.data['wikitext'])
+    def __init__(self, page):
+        self._page = page
+        self.ast = wtp.parse(self._page.data['wikitext'])
 
         #Detect radio pages by searching a radio infobox
         self.infobox = self.radio_site = None
@@ -35,29 +34,32 @@ class PageInfo:
             self.type = PageInfo.RADIO
             return None
 
-        #Detect page with list of radios
+        #Detect page with lists of radios
         #Retrieve all section delimited with an h2
         self.sections = [section for section in self.ast.sections \
-            if section.level == 2 and self.allowed_section(section)]
+            if section.level in [0, 2] and self.allowed_section(section)]
 
         #Get at least one table with radio listed
-        self.manage_tables()
+        self.manage_datatype("table")
+        if not self.have_table:
+            self.manage_datatype("list")
+
         if self.have_table:
             self.type = PageInfo.LIST
             return None
 
-    def manage_tables(self):
+    def manage_datatype(self, type_data):
         """
-        Try to retrieve table in a page. Group founded table
+        Try to retrieve table or list in a page. Group founded element
         in : 
          - self.tables_by_section => dict of tables grouped by section
          - self.tables => list of all tables
         """
-
         #Try to retrieve table for each section in the current page
         self.tables_by_section = {}
         for section in self.sections:
-            self.tables_by_section.update(self.retrieve_tables(section))
+            self.tables_by_section.update(\
+                    self.retrieve_data(section, mode=type_data))
 
         def group_table(section_dict):
             """
@@ -74,29 +76,14 @@ class PageInfo:
 
         self.tables = group_table(self.tables_by_section)
 
-    @property
-    def have_table(self):
-        return len(self.tables) > 0
-
-    @property
-    def id(self):
-        return self.page.data["pageid"]
-
-    def allowed_section(self, section):
+    def retrieve_data(self, section, mode="table"):
         """
-        Remove default section of a wikipedia page,
-        as listed in REMOVED_SECTION.
-        """
-        if not section.title:
-            return False
-        return section.title.strip().lower() not in self.REMOVED_SECTION
-
-    def retrieve_tables(self, section):
-        """
-        Recursive search to retrieve a table for a section,
+        Recursive search to retrieve a table or list for a section,
         or existing subsection.
 
-        Table is expected to not have any sub-section, and
+        Available mode : table/list
+
+        Those element are expected to not have any sub-section, and
         different section level are stored in dict like :
 
         {
@@ -112,21 +99,63 @@ class PageInfo:
             ...
         }
         """
+        #Retrieve default section name, set
+        #page title for section without title (level 0)
+        if section.title:
+            title = section.title
+        else:
+            title = self._page.data['title']
+        title = title.lower()
+
         #Try to retrieve subsection, with higher level
         sub_section = [sub_section for sub_section in
                 section.sections if sub_section.level == section.level + 1]
         table = None
-        #Search subsection table recursively
+
+        #Search subsection table/list recursively
         if sub_section:
-            list_table = list(map(self.retrieve_tables, sub_section))
-            table = list_table
-        #Do not have subsection, check if a table is available.
-        elif section.tables:
-            try:
-                table = RadioTable(section.tables[0])
-            except TableError as error:
-                logging.error(error)
-        return {section.title.strip():table}
+            args = (
+                    sub_section,
+                    [mode] * len(sub_section)
+                    )
+            list_table = list(map(self.retrieve_data, *args))
+            return {title : list_table}
+
+        #Section withou sub section, try to find table or list
+        #depending of the mode.
+        if mode == "table" and section.tables:
+            radios_element = section.tables[0]
+        elif mode == "list" and section.get_lists():
+            radios_element = section.get_lists()[0].items
+        #No information found in the current section
+        else:
+            return {title : None}
+
+        #Convert list or table in RadioTable element
+        try:
+            table = RadioTable(**{mode:radios_element})
+        except TableError as error:
+            logging.error(error)
+        return {title : table}
+
+
+    @property
+    def have_table(self):
+        return len(self.tables) > 0
+
+    @property
+    def id(self):
+        return self._page.data["pageid"]
+
+    def allowed_section(self, section):
+        """
+        Remove default section of a wikipedia page,
+        as listed in REMOVED_SECTION.
+        """
+        if section.level == 0:
+            return True
+        return section.title.strip().lower() not in self.REMOVED_SECTION
+
 
     def find_infobox(self):
         """
@@ -183,7 +212,7 @@ class PageInfo:
         """
         website_labels = ["official url", "official website"]
         labels = {value:key for key, value in \
-                self.page.data["labels"].items()}
+                self._page.data["labels"].items()}
 
         item_id = None
         index = 0
@@ -192,4 +221,4 @@ class PageInfo:
             index += 1
         if item_id is None:
             return None
-        return self.page.data['claims'][item_id][0]
+        return self._page.data['claims'][item_id][0]
