@@ -2,58 +2,7 @@ import csv
 import threading
 from collections import OrderedDict
 import fcntl
-
-class RadioInfo:
-    """
-    Group all information about a single radio.
-    """
-    def __init__(self, name, site, mails):
-        self.site = site
-        self.mails = mails
-        self.name = name
-
-    def __repr__(self):
-        return self.name
-
-    @property
-    def mails(self):
-        return self._mails
-
-    @mails.setter
-    def mails(self, value):
-        if type(value) == str:
-            if len(value.strip()) == 0:
-                value = None
-            else:
-                value = {mail.strip() for mail in value.split(',')}
-        self._mails = value
-
-    def mails_str(self):
-        """
-        Format a string with all emails, separate by a coma
-        """
-        if self.mails is None:
-            return ""
-        return ", ".join(self.mails)
-
-    def add_mail(self, mail):
-        """
-        Add some extra mail into the current list of mail
-        """
-        if type(mail) == str:
-            mail = {mail}
-        if type(mail) != set:
-            return
-        if self.mails:
-            self.mails = self.mails | mail
-        else:
-            self.mails = mail
-
-    def as_csv(self):
-        return ['', self.name, self.site, self.mails_str()]
-
-    def merge(self, other):
-        self.add_mail(other.mails)
+from .radio_info import RadioInfo
 
 
 class LogRadio:
@@ -73,27 +22,30 @@ class LogRadio:
         Retrieve all logged info about radios.
         Store information in a dictionnary with format
         {
-          "departement1" : [RadioInfo1, RadioInfo2, ...],
-          "departement2" : [...],
+          "section" : [RadioInfo1, RadioInfo2, ...],
+          "section" : [...],
           ...
         }
         """
         logfile = csv.reader(self.filestream, delimiter=';')
 
         #Skip first line (description row)
-        self.description_column = next(logfile)
+        # self.description_column = next(logfile)
+        logfile = list(logfile)
 
         #Go through each line of the csv
         radio_dataset = OrderedDict()
-        for departement, radio, site, mails in logfile:
-            #Getting row with a new departement
-            if departement:
-                current_departement = departement
-                radio_dataset.update({departement:[]})
+        # for departement, radio, site, mails in logfile:
+        for row in logfile:
+            row = [cell for cell in row if len(cell.strip())]
+            #Getting row with a new section
+            if len(row) == 1:
+                current_section = row[0]
+                radio_dataset.update({current_section:[]})
             #Otherwise, store radio info stored in a single row
             else:
-                radio_dataset[current_departement].\
-                        append(RadioInfo(radio, site, mails))
+                radio_dataset[current_section].\
+                        append(RadioInfo(*row))
         return radio_dataset
 
     def update_dataset(self):
@@ -164,3 +116,12 @@ class LogRadio:
             for radio in self.radio_dataset[departement]:
                 list_radios.append(radio)
         return list_radios
+
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) == 2:
+        filename = sys.argv[1]
+        log = LogRadio(filename)
+        print(log)
+        print(log.radio_dataset)
+    pass

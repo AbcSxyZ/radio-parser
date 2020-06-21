@@ -1,37 +1,24 @@
 import requests
 import urllib.parse as URLParse
-from html.parser import HTMLParser
 import os.path
 import re
+
+from .errors import UrlException
+from .link import LinkParser
 
 MAIL_REGEX = "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"
 MAIL_REGEX = re.compile(MAIL_REGEX)
 
-class UrlException(Exception):
-    """Raise when there is an error while trying to GET url"""
-
-class LinkParser(HTMLParser):
-    """ DOM parser to retrieve href of all <a> elements """
-
-    def parse_links(self, html_content):
-        self.links = []
-        self.feed(html_content)
-        return self.links
-
-    def handle_starttag(self, tag, attrs):
-        if tag == "a":
-            attrs = {key.lower():value for key, *value in attrs}
-            urls = attrs.get("href", None)
-            if urls:
-                self.links.append(urls[0])
 
 def is_url(parsed_url):
     """ Check if the given string is an url """
     return all([parsed_url.scheme, parsed_url.netloc])
 
 def retrieve_email(html_content):
+    """
+    Find all emails within an html page.
+    """
     return set(MAIL_REGEX.findall(html_content))
-
 
 class Site:
     def __init__(self, url):
@@ -49,7 +36,7 @@ class Site:
         url_params = {
             "scheme" : parsed_url.scheme,
             "netloc" : parsed_url.netloc,
-            "path" : "/",
+            "path" : parsed_url.path,
             "query" : "",
             "fragment" : "",
                 }
@@ -64,9 +51,6 @@ class Site:
                 url = self.to_navigate_url.pop()
             except KeyError:
                 break
-            if url in self.navigated_url:
-                continue
-            self.navigated_url |= {url}
             try:
                 content = self.parse_url(url)
             except UrlException as Error:
@@ -80,8 +64,9 @@ class Site:
 
     def convert_site_url(self, url:str):
         """
-        Convert an url to a ParseResult with the given
-        url is related to the current site
+        Convert an url to a ParseResult. Control
+        if it's a valid link, and if it's pointing
+        to the website.
         """
         parsed_url = URLParse.urlparse(url)
 
@@ -104,9 +89,15 @@ class Site:
         path = os.path.realpath(path)
         return self.base_url._replace(path=path)
 
-
     @staticmethod
     def parse_url(url):
+        """
+        Handler to get a website url. Control if the given
+        url isn't already explored.
+        """
+        if url in self.navigated_url:
+            continue
+        self.navigated_url |= {url}
         try:
             response = requests.get(url)
         except requests.exceptions.SSLError:

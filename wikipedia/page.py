@@ -3,6 +3,7 @@ import wptools
 from .table import RadioTable
 import logging
 from .wiki_error import PageError, TableError, PageNotExists
+from collections import OrderedDict
 
 logger = logging.getLogger('wiki')
 
@@ -26,6 +27,7 @@ class PageInfo:
     LIST = 0
 
     def __init__(self, title, silent=False):
+        self.title = title
         #Fetch page from wikipedia
         try:
             self._page = wptools.page(title, silent=silent).get()
@@ -80,7 +82,7 @@ class PageInfo:
             """
             list_table = []
             for section_content in section_dict.values():
-                if type(section_content) == dict:
+                if type(section_content) == OrderedDict:
                     list_table.extend(group_table(section_content))
                 elif type(section_content) == list:
                     list_table.extend(section_content)
@@ -134,10 +136,11 @@ class PageInfo:
         if sub_section:
             sections_titles = [self._find_section_title(ast) for \
                     ast in sub_section]
-            subsection_data = map(self.retrieve_data, sub_section)
-            list_table = {sub_title:data for sub_title, data in \
-                    zip(sections_titles, subsection_data)}
-            return {title : list_table}
+            subsection_data = list(map(self.retrieve_data, sub_section))
+            list_table = OrderedDict()
+            for sub_section_result in subsection_data:
+                list_table.update(sub_section_result)
+            return OrderedDict({title : list_table})
 
         #Section without sub section, retrieve all
         #table and list of the wikitext
@@ -150,7 +153,7 @@ class PageInfo:
                     radio in section_lists])
         #No information found in the current section
         if not radios_tables:
-            return {title : None}
+            return OrderedDict({title : None})
 
         #Convert list or table in RadioTable element
         section_tables = []
@@ -160,7 +163,7 @@ class PageInfo:
             except TableError as error:
                 err_msg = f"{self.url} : {error}"
                 logger.warning(err_msg)
-        return {title : section_tables}
+        return OrderedDict({title : section_tables})
 
     @property
     def url(self):
@@ -223,9 +226,11 @@ class PageInfo:
         #Stored as external link : "[http://www.waao.com/ waao.com]"
         elif tokenized_field.external_links:
             url = tokenized_field.external_links[0].url
-        if url is not None:
+        if url:
             return url
-        raise PageError(f"Url not found with {website_field}")
+
+        err_msg = "Url not found with {}".format(website_field)
+        raise PageError(err_msg)
 
     def _retrieve_official_website(self, template_name):
         """

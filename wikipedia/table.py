@@ -1,5 +1,5 @@
 import wikitextparser as wtp
-from .radio import Radio
+from .radio_cell import RadioCell
 from .wiki_error import TableError
 
 
@@ -68,7 +68,7 @@ class RadioTable:
 
     def link_converter(self):
         """
-        Convert wikitext of radio name into a Radio element.
+        Convert wikitext of radio name into a RadioCell element.
         Check if a link is available to the given radio.
         """
         for index, radio_field in enumerate(self.radios):
@@ -79,8 +79,8 @@ class RadioTable:
             else:
                 radio_name = str(radio_field)
 
-            #replace raw wikitext by a Radio element
-            self.radios[index] = Radio(radio_name, have_wiki)
+            #replace raw wikitext by a RadioCell element
+            self.radios[index] = RadioCell(radio_name, have_wiki)
 
     def __str__(self):
         return " | ".join(map(str, self.radios))
