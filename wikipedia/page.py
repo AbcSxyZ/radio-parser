@@ -1,10 +1,10 @@
-
 import wikitextparser as wtp
-from table import RadioTable, TableError
+import wptools
+from .table import RadioTable
 import logging
+from .wiki_error import PageError, TableError, PageNotExists
 
-class PageError(Exception):
-    __module__ = "PageInfo"
+logger = logging.getLogger('wiki')
 
 class PageInfo:
     """
@@ -19,13 +19,24 @@ class PageInfo:
             "see also",
             "references",
             "external links",
+            "frequencies", #MUST BE REMOVED
             ]
 
     RADIO = 1
     LIST = 0
-    def __init__(self, page):
-        self._page = page
+
+    def __init__(self, title, silent=False):
+        #Fetch page from wikipedia
+        try:
+            self._page = wptools.page(title, silent=silent).get()
+            logger.info("Wiki parse {}".format(self.url))
+        except LookupError:
+            err_msg = f"\"{title}\" not found"
+            logger.warning(err_msg)
+            raise PageNotExists(err_msg)
+
         self.ast = wtp.parse(self._page.data['wikitext'])
+        self.type = None
 
         #Detect radio pages by searching a radio infobox
         self.infobox = self.radio_site = None
@@ -40,15 +51,16 @@ class PageInfo:
             if section.level in [0, 2] and self.allowed_section(section)]
 
         #Get at least one table with radio listed
-        self.manage_datatype("table")
-        if not self.have_table:
-            self.manage_datatype("list")
+        self.manage_datatype()
 
         if self.have_table:
             self.type = PageInfo.LIST
             return None
 
-    def manage_datatype(self, type_data):
+        err_msg = "{} : Invalid url, not a radio station or listing"
+        raise PageError(err_msg.format(self.url))
+
+    def manage_datatype(self):
         """
         Try to retrieve table or list in a page. Group founded element
         in : 
@@ -59,7 +71,7 @@ class PageInfo:
         self.tables_by_section = {}
         for section in self.sections:
             self.tables_by_section.update(\
-                    self.retrieve_data(section, mode=type_data))
+                    self.retrieve_data(section))
 
         def group_table(section_dict):
             """
@@ -70,74 +82,89 @@ class PageInfo:
             for section_content in section_dict.values():
                 if type(section_content) == dict:
                     list_table.extend(group_table(section_content))
-                elif type(section_content) == RadioTable:
-                    list_table.append(section_content)
+                elif type(section_content) == list:
+                    list_table.extend(section_content)
             return list_table
 
         self.tables = group_table(self.tables_by_section)
 
-    def retrieve_data(self, section, mode="table"):
+    def _find_section_title(self, section):
         """
-        Recursive search to retrieve a table or list for a section,
+        Define a section name to use for dict, using page title
+        for empty title (wikitext header level 0).
+        """
+        if section.title:
+            section_title_wikitext = wtp.parse(section.title)
+            if section_title_wikitext.wikilinks:
+                title = section_title_wikitext.wikilinks[0].title
+            else:
+                title = section.title
+        else:
+            title = self._page.data['title']
+        return title.strip()
+
+
+    def retrieve_data(self, section):
+        """
+        Recursive search to retrieve a table or list of a section,
         or existing subsection.
 
-        Available mode : table/list
-
-        Those element are expected to not have any sub-section, and
-        different section level are stored in dict like :
+        Element from sections are stored in a dict like :
 
         {
             "section" : {
-                "sub section" : RadioTable,
+                "sub section" : [RadioTable, RadioTable, ...],
                 "sub section" : {
-                    "sub section" : RadioTable,
+                    "sub section" : [...],
                     ...
                 },
                 ...
             },
-            "section" : RadioTable,
+            "section" : [RadioTable],
             ...
         }
         """
-        #Retrieve default section name, set
-        #page title for section without title (level 0)
-        if section.title:
-            title = section.title
-        else:
-            title = self._page.data['title']
-        title = title.lower()
+        title = self._find_section_title(section)
 
         #Try to retrieve subsection, with higher level
         sub_section = [sub_section for sub_section in
                 section.sections if sub_section.level == section.level + 1]
-        table = None
 
         #Search subsection table/list recursively
         if sub_section:
-            args = (
-                    sub_section,
-                    [mode] * len(sub_section)
-                    )
-            list_table = list(map(self.retrieve_data, *args))
+            sections_titles = [self._find_section_title(ast) for \
+                    ast in sub_section]
+            subsection_data = map(self.retrieve_data, sub_section)
+            list_table = {sub_title:data for sub_title, data in \
+                    zip(sections_titles, subsection_data)}
             return {title : list_table}
 
-        #Section withou sub section, try to find table or list
-        #depending of the mode.
-        if mode == "table" and section.tables:
-            radios_element = section.tables[0]
-        elif mode == "list" and section.get_lists():
-            radios_element = section.get_lists()[0].items
+        #Section without sub section, retrieve all
+        #table and list of the wikitext
+        radios_tables = []
+        if  section.tables:
+            radios_tables.extend(section.tables)
+        if section.get_lists():
+            section_lists = section.get_lists()
+            radios_tables.extend([radio.items for \
+                    radio in section_lists])
         #No information found in the current section
-        else:
+        if not radios_tables:
             return {title : None}
 
         #Convert list or table in RadioTable element
-        try:
-            table = RadioTable(**{mode:radios_element})
-        except TableError as error:
-            logging.error(error)
-        return {title : table}
+        section_tables = []
+        for table in radios_tables:
+            try:
+                section_tables.append(RadioTable(table))
+            except TableError as error:
+                err_msg = f"{self.url} : {error}"
+                logger.warning(err_msg)
+        return {title : section_tables}
 
+    @property
+    def url(self):
+        return self._page.data['url']
 
     @property
     def have_table(self):
@@ -155,7 +182,6 @@ class PageInfo:
         if section.level == 0:
             return True
         return section.title.strip().lower() not in self.REMOVED_SECTION
-
 
     def find_infobox(self):
         """
@@ -200,7 +226,6 @@ class PageInfo:
         if url is not None:
             return url
         raise PageError(f"Url not found with {website_field}")
-
 
     def _retrieve_official_website(self, template_name):
         """

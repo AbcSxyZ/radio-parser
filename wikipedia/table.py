@@ -1,11 +1,7 @@
 import wikitextparser as wtp
-from radio import Radio
+from .radio import Radio
+from .wiki_error import TableError
 
-class TableError(Exception):
-    __module__ = "RadioTable"
-    def __init__(self, msg, *args, **kwargs):
-        msg = "{}:{}".format(self.__module__, msg)
-        super().__init__(msg, *args, **kwargs)
 
 class RadioTable:
     """
@@ -14,18 +10,25 @@ class RadioTable:
     Control which column is the radio list, and store those
     links.
     """
-    AVAILABLE_TAG = ["name", "call sign"]
-    def __init__(self, table=[], list=[]):
-        self.radios = list
-        if self.radios:
+    AVAILABLE_TAG = [
+            "station name or names",
+            "name",
+            "call sign",
+            "callsign",
+            ]
+    def __init__(self, data):
+        self.radios = []
+        if type(data) is not wtp.Table:
+            self.radios = data
             self.link_converter()
             return None
-        self.ast_table = table
-        self.table = table.data()
+        self.ast_table = data
+        self.table = self.ast_table.data()
         self.fields = self._get_fields()
         self._radio_colname = self.get_radio_column()
 
         self.get_list_radio()
+
 
     def _get_fields(self):
         """
@@ -52,9 +55,15 @@ class RadioTable:
         """
         Create a list with all available radios from a single table.
         """
-        #Get the index on radio in the table, and keep a list of name
+        #Get the index on radio in the table, to keep a list of name
         index_radio = self.fields.index(self._radio_colname)
-        self.radios = [row[index_radio] for row in self.table[1:]]
+
+        #Retrieve in the indexed column radio names
+        for row in self.table[1:]:
+            radio_name = row[index_radio]
+            #Remove radio without name
+            if radio_name.strip() != "":
+                self.radios.append(radio_name)
         self.link_converter()
 
     def link_converter(self):
@@ -78,3 +87,10 @@ class RadioTable:
 
     def __repr__(self):
         return self.__str__()
+
+    def __iter__(self):
+        self._iter_index = iter(self.radios)
+        return self
+
+    def __next__(self):
+        return next(self._iter_index)

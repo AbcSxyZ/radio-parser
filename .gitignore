@@ -1,5 +1,6 @@
 #Custom
 *.sw[pno]
+*.log
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
