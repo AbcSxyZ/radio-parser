@@ -151,13 +151,11 @@ class Site:
         if it's a valid link, and if it's pointing
         to the website.
         """
-        parsed_url = URLParse.urlparse(url)
-
         #Remove image links
-        extension = parsed_url.path.split('.')[-1]
-        if extension.lower() in ['svg', 'png', 'jpg', 'jpeg', 'mp3', \
-                'mp4']:
+        if self._is_image(url):
             return None
+
+        parsed_url = URLParse.urlparse(url)
 
         #Having an entire url in href
         if is_url(parsed_url):
@@ -207,7 +205,11 @@ class Site:
         #Retrieve all links related to the website
         website_links = []
         for link in link_list:
-            formatted_link = self._convert_site_url(link)
+            try:
+                formatted_link = self._convert_site_url(link)
+            except AttributeError:
+                print(link_list)
+                exit(1)
             if formatted_link:
                 website_links.append(formatted_link)
 

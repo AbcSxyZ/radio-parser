@@ -13,5 +13,5 @@ class LinkParser(HTMLParser):
         if tag == "a":
             attrs = {key.lower():value for key, *value in attrs}
             urls = attrs.get("href", None)
-            if urls:
+            if urls and urls[0]:
                 self.links.append(urls[0])
