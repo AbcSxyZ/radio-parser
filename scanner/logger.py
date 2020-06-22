@@ -56,7 +56,6 @@ class LogRadio:
         #of this section
         for section in self.radio_dataset.keys():
             section_printed = False
-            writer.writerow([section, "", "", ""])
             for radio_info in self.radio_dataset[section]:
                 if radio_info.have_mail:
                     if section_printed == False:
