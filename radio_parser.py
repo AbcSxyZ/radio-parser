@@ -4,10 +4,27 @@ from scanner.logger import LogRadio
 from scanner.site import Site
 from wikipedia.controller import SearchController
 from argparse import ArgumentParser
+import os
 
 import sys
 
 VERBOSE = None
+
+
+class WorkingDirectory:
+    def __init__(self, directory):
+        if not os.path.exists(directory):
+            os.mkdir(directory)
+
+        self.origin = os.getcwd()
+        self.workdir = os.path.join(self.origin, directory)
+
+    def __enter__(self):
+        os.chdir(self.workdir)
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        os.chdir(self.origin)
 
 def get_options():
     """
@@ -32,6 +49,9 @@ and parse them to find contact email."""
 
     parser.add_argument("-v", "--verbose",
             action="store_true", default=False)
+    parser.add_argument("-w", "--workdir",
+            default="scanner-search", metavar="dir",
+            help="Parser working directory")
 
     args = parser.parse_args()
 
@@ -60,7 +80,7 @@ def parse_radio_file(wikilist_file):
         #Save at each explored section
         log_file.save()
 
-def parse_wiki_list(wikilist_page):
+def parse_wiki_list(wikilist_page, workdir):
     """
     Parse wikipedia page, mainly "List of radio stations in ..."
     like page.
@@ -74,14 +94,15 @@ def parse_wiki_list(wikilist_page):
     and use parse_radio_file to explore each radio website.
     """
     silent = VERBOSE == False
-    wikisearch = SearchController(wikilist_page, silent=silent)
-    wikisearch.launch()
-    parse_radio_file(wikisearch.filename)
+    with WorkingDirectory(workdir):
+        wikisearch = SearchController(wikilist_page, silent=silent)
+        wikisearch.launch()
+        parse_radio_file(wikisearch.filename)
 
 if __name__ == "__main__":
     ARGS = get_options()
     if ARGS.wiki_title:
-        parse_wiki_list(ARGS.wiki_title)
+        parse_wiki_list(ARGS.wiki_title, ARGS.workdir)
     elif ARGS.csv:
         parse_radio_file(ARGS.csv)
 
