@@ -30,17 +30,10 @@ class SearchController:
         self.workdir = self._choose_filename(self.base_title)
         self.workdir = os.path.join(os.getcwd(), self.workdir)
 
-        self.filename = self.base_title + ".csv"
+        self.filename = self.base_title + ".template"
+        self.filename = os.path.join(self.workdir, self.filename)
 
-
-    def launch(self):
-        """
-        Parse a wikipedia page, which is expected to be a list
-        of radio station, and retrieve all radio wikipedia pages
-        linked within this list.
-
-        Store founded information in the selected way.
-        """
+    def _launch(self):
         if not self.base_page:
             self.base_page = self._search_page(self.base_title, False)
 
@@ -52,6 +45,18 @@ class SearchController:
         #Generator, will allow saving between each table parsing.
         for table in self._search_tables():
             self.save()
+
+    def launch(self):
+        """
+        Parse a wikipedia page, which is expected to be a list
+        of radio station, and retrieve all radio wikipedia pages
+        linked within this list.
+
+        Store founded information in the selected way.
+        """
+        #Move to the controller working directory
+        with self:
+            self._launch()
 
     def _search_page(self, title, catch=True):
         """
