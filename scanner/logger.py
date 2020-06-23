@@ -8,6 +8,7 @@ class LogRadio:
     Interface to manipulate the radio's csv file, containaing
     all site and emails of radios.
     """
+    COLUMNS = ["radio", "site", "domain mails", "unsure mails"]
     def __init__(self, filename):
         self.datafile = filename
         # Replace .template extension by .csv
@@ -49,6 +50,7 @@ class LogRadio:
         """
         savestream = open(self.recordfile, "w")
         writer = csv.writer(savestream, delimiter=';')
+        writer.writerow(self.COLUMNS)
 
         #Go through each section followed by each radio
         #of this section
