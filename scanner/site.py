@@ -4,6 +4,7 @@ from requests.exceptions import SSLError, ConnectionError, Timeout, \
 import urllib.parse as URLParse
 import os.path
 import re
+import sys
 import time
 
 from .errors import UrlException, LifetimeExceeded
@@ -125,6 +126,8 @@ class Site:
             try:
                 content = self._parse_url(url)
             except (UrlException, LifetimeExceeded) as Error:
+                if homepage:
+                    print(f"{url}: can't GET website", file=sys.stderr)
                 continue
 
             #Store mail like element of the page
