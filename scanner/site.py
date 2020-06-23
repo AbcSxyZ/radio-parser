@@ -175,9 +175,10 @@ class Site:
             return parsed_url
 
         #Having only a path or a fragment
-        path = os.path.join(self.base_url.path, parsed_url.path)
-        path = os.path.realpath(path)
-        return self.base_url._replace(path=path)
+        if parsed_url.path:
+            path = os.path.join(self.base_url.path, parsed_url.path)
+            path = os.path.normpath(path)
+            return self.base_url._replace(path=path)
 
     def _parse_url(self, url):
         """
