@@ -1,5 +1,6 @@
 import requests
-from requests.exceptions import SSLError, ConnectionError, Timeout
+from requests.exceptions import SSLError, ConnectionError, Timeout, \
+        TooManyRedirects
 import urllib.parse as URLParse
 import os.path
 import re
@@ -42,6 +43,10 @@ class Site:
     MAX_LEVEL = 3
     MAX_UNSURE = 5
     LIFETIME = 30
+
+    HEADERS = {
+            'User-Agent': 'Mozilla/5.0 Gecko/41.0 Firefox/41.0',
+            }
     def __init__(self, url):
         self.creation = time.perf_counter()
         self.base_url = None
@@ -187,8 +192,10 @@ class Site:
             
         self.navigated_url |= {url}
         try:
-            response = requests.get(url, timeout=5)
-        except (SSLError, ConnectionError, Timeout) as Error:
+            response = requests.get(url, timeout=5, \
+                    headers=self.HEADERS)
+        except (SSLError, ConnectionError, Timeout, TooManyRedirects) \
+                as Error:
             raise UrlException(f"{url}: {Error}")
         if response.status_code == 200:
             return response.text
