@@ -11,7 +11,8 @@ from .link import LinkParser
 MAIL_REGEX = "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"
 MAIL_REGEX = re.compile(MAIL_REGEX)
 
-MEDIA_EXTENSIONS = ['svg', 'png', 'jpg', 'jpeg', 'mp3', 'mp4']
+MEDIA_EXTENSIONS = ['svg', 'png', 'jpg', 'jpeg', 'mp3', 'mp4',
+        "gif"]
 
 
 def is_url(parsed_url):
