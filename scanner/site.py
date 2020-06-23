@@ -49,14 +49,20 @@ class Site:
             'User-Agent': 'Mozilla/5.0 Gecko/41.0 Firefox/41.0',
             }
     def __init__(self, url):
+        #General information
+        self.homepage = True
+        self.mode = self.NORMAL
         self.creation = time.perf_counter()
+
+        #Url related
         self.base_url = None
         self.navigated_url = set()
         self.to_navigate_url = None
+
+        #Mail related
         self._mails_raw = set()
         self.unsure_mails = set()
         self.domain_mails = set()
-        self.mode = self.NORMAL
 
         self._get_base_url(url)
         self.to_navigate_url = {self.base_url.geturl()}
@@ -118,7 +124,6 @@ class Site:
         Fetch an url, find emails in html content, and store
         internal links of the page to be parsed later.
         """
-        homepage = True
         nesting_level = 0
         self._cached_url = set()
         while len(self.to_navigate_url):
@@ -126,8 +131,9 @@ class Site:
             try:
                 content = self._parse_url(url)
             except (UrlException, LifetimeExceeded) as Error:
-                if homepage:
-                    print(f"{url}: can't GET website", file=sys.stderr)
+                if self.homepage:
+                    print(f"{url}: can't GET website '{Error}'", \
+                            file=sys.stderr)
                 continue
 
             #Store mail like element of the page
@@ -146,12 +152,12 @@ class Site:
                 #level, specified by MAX_LEVEL
                 if not nesting_level < self.MAX_LEVEL:
                     return
-                if self.mode == Site.NORMAL and homepage == False:
+                if self.mode == Site.NORMAL and not self.homepage:
                     return
                 nesting_level += 1
                 self.to_navigate_url = self._cached_url
                 self._cached_url = set()
-                homepage = False
+                self.homepage = False
 
 
     def _convert_site_url(self, url:str):
