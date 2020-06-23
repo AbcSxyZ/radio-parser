@@ -101,7 +101,7 @@ class Site:
         netloc = parsed_url.netloc if is_url(parsed_url) else url
 
         url_params = {
-            "scheme" : "https",
+            "scheme" : "http",
             "netloc" : netloc,
             "path" : path,
             "query" : "",
