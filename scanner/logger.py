@@ -1,7 +1,5 @@
 import csv
-import threading
 from collections import OrderedDict
-import fcntl
 from .radio_info import RadioInfo
 
 

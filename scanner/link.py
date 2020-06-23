@@ -1,4 +1,3 @@
-
 from html.parser import HTMLParser
 
 class LinkParser(HTMLParser):
