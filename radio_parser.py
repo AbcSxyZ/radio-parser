@@ -42,14 +42,14 @@ and parse them to find contact email."""
 
     parser = ArgumentParser(description=description)
     group = parser.add_mutually_exclusive_group()
-    group.add_argument("--wiki-title", metavar="title",
+    group.add_argument("-w", "--wiki-title", metavar="title",
             help="Wikipedia page with radio stations list")
     group.add_argument("--csv", metavar="filename",
             help="csv file of radio list")
 
     parser.add_argument("-v", "--verbose",
             action="store_true", default=False)
-    parser.add_argument("-w", "--workdir",
+    parser.add_argument("--workdir",
             default="scanner-search", metavar="dir",
             help="Parser working directory")
 
