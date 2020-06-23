@@ -28,12 +28,10 @@ class WorkingDirectory:
 
 def get_options():
     """
-    Syntax: [-h] [--wiki-title title | --csv filename] 
-        [--verbose]
-
     See --help for options details.
     """
     global VERBOSE
+
     description = """
 Search radio contact in list of station,
 using wikipedia "list of radio stations" pages.
@@ -41,11 +39,13 @@ Retrieve radio websites available in wikipedia,
 and parse them to find contact email."""
 
     parser = ArgumentParser(description=description)
-    group = parser.add_mutually_exclusive_group()
+    group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("-w", "--wiki-title", metavar="title",
             help="Wikipedia page with radio stations list")
     group.add_argument("--csv", metavar="filename",
             help="csv file of radio list")
+    group.add_argument("-s", "--site", metavar="site",
+            help="Search email in the given site")
 
     parser.add_argument("-v", "--verbose",
             action="store_true", default=False)
@@ -55,10 +55,6 @@ and parse them to find contact email."""
 
     args = parser.parse_args()
 
-    #Error if no argument is given
-    if not args.wiki_title and not args.csv:
-        parser.print_usage()
-        exit(f"{sys.argv[0]}: error: no argument is given")
     VERBOSE = args.verbose
     return parser.parse_args()
 
@@ -99,10 +95,21 @@ def parse_wiki_list(wikilist_page, workdir):
         wikisearch.launch()
         parse_radio_file(wikisearch.filename)
 
+def parse_radio_site(url):
+    """
+    Retrieve emails from a single website, print them on stdout.
+    """
+    site = Site(url)
+    site.find_mail()
+    print("Domain mail : {}".format(site.domain_mails))
+    print("unknow mail : {}".format(site.unsure_mails))
+
 if __name__ == "__main__":
     ARGS = get_options()
     if ARGS.wiki_title:
         parse_wiki_list(ARGS.wiki_title, ARGS.workdir)
     elif ARGS.csv:
         parse_radio_file(ARGS.csv)
+    elif ARGS.site:
+        parse_radio_site(ARGS.site)
 
