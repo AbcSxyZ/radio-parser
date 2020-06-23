@@ -213,11 +213,7 @@ class Site:
         #Retrieve all links related to the website
         website_links = []
         for link in link_list:
-            try:
-                formatted_link = self._convert_site_url(link)
-            except AttributeError:
-                print(link_list)
-                exit(1)
+            formatted_link = self._convert_site_url(link)
             if formatted_link:
                 website_links.append(formatted_link)
 
