@@ -202,7 +202,7 @@ class Site:
             
         self.navigated_url |= {url}
         try:
-            response = requests.get(url, timeout=5, \
+            response = requests.get(url, timeout=10, \
                     headers=self.HEADERS)
         except (SSLError, ConnectionError, Timeout, TooManyRedirects) \
                 as Error:
