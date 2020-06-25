@@ -23,6 +23,12 @@ class PageInfo:
             "frequencies", #MUST BE REMOVED
             ]
 
+    ALLOWED_INFOBOX = [
+            "radio station",
+            "infobox radio station",
+            "infobox broadcasting network",
+            ]
+
     RADIO = 1
     LIST = 0
 
@@ -193,7 +199,7 @@ class PageInfo:
         """
         for template in self.ast.templates:
             template_name = template.normal_name().lower()
-            if template_name == "infobox radio station":
+            if template_name in self.ALLOWED_INFOBOX:
                 self.infobox = template
         if not self.infobox:
             return None
