@@ -18,7 +18,7 @@ class SearchController:
     """
     NB_CSV_COLUMNS = 4
 
-    def __init__(self, base_title, silent=False, base_page=None):
+    def __init__(self, base_title, lang, silent=False, base_page=None):
         self.base_title = base_title.strip()
         self.base_page = base_page
         self.silent = silent
@@ -30,6 +30,8 @@ class SearchController:
 
         self.filename = self.base_title + ".template"
         self.filename = os.path.join(self.workdir, self.filename)
+
+        self.lang = lang
 
     def _launch(self):
         if not self.base_page:
@@ -77,7 +79,7 @@ class SearchController:
 
         #Retrieve wikipedia page, manage errors.
         try:
-            page = PageInfo(title, silent=self.silent)
+            page = PageInfo(title, self.lang, silent=self.silent)
         except (PageError, ValueError) as Error:
             logger.warning(Error)
             if catch == False:
@@ -105,7 +107,8 @@ class SearchController:
                     radio.url = wiki_page.radio_site
                 #Create new controller for a wiki with radio listing.
                 elif wiki_page.type == PageInfo.LIST:
-                    new_control = SearchController(str(radio), base_page=wiki_page)
+                    new_control = SearchController(str(radio), 
+                            lang=self.lang, base_page=wiki_page)
                     self.childs.append(new_control)
 
             #Stop at each table, to perform saving.

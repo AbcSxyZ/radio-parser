@@ -32,11 +32,11 @@ class PageInfo:
     RADIO = 1
     LIST = 0
 
-    def __init__(self, title, silent=False):
+    def __init__(self, title, lang, silent=False):
         self.title = title
         #Fetch page from wikipedia
         try:
-            self._page = wptools.page(title, silent=silent).get()
+            self._page = wptools.page(title, silent=silent, lang=lang).get()
             logger.info("Wiki parse {}".format(self.url))
         except LookupError:
             err_msg = f"\"{title}\" not found"

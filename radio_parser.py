@@ -35,6 +35,10 @@ and parse them to find contact email."""
             default="scanner-search", metavar="dir",
             help="Parser working directory")
 
+    parser.add_argument("-l", "--lang",
+            default="en", metavar="wiki-language",
+            help="Select wikipedia's lang")
+
     args = parser.parse_args()
 
     VERBOSE = args.verbose
@@ -58,7 +62,7 @@ def parse_radio_file(wikilist_file):
         #Save at each explored section
         log_file.save()
 
-def parse_wiki_list(wikilist_page, workdir):
+def parse_wiki_list(wikilist_page, lang, workdir):
     """
     Parse wikipedia page, mainly "List of radio stations in ..."
     like page.
@@ -73,7 +77,7 @@ def parse_wiki_list(wikilist_page, workdir):
     """
     silent = VERBOSE == False
     with WorkingDirectory(workdir):
-        wikisearch = SearchController(wikilist_page, silent=silent)
+        wikisearch = SearchController(wikilist_page, lang, silent=silent)
         wikisearch.launch()
         parse_radio_file(wikisearch.filename)
 
@@ -89,7 +93,7 @@ def parse_radio_site(url):
 if __name__ == "__main__":
     ARGS = get_options()
     if ARGS.wiki_title:
-        parse_wiki_list(ARGS.wiki_title, ARGS.workdir)
+        parse_wiki_list(ARGS.wiki_title, ARGS.lang, ARGS.workdir)
     elif ARGS.csv:
         parse_radio_file(ARGS.csv)
     elif ARGS.site:
