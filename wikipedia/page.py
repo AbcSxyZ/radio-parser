@@ -27,6 +27,12 @@ class PageInfo:
             "radio station",
             "infobox radio station",
             "infobox broadcasting network",
+            "infobox hörfunksender",
+            ]
+
+    INFOBOX_SITE_FIELD = [
+            "website",
+            "hp",
             ]
 
     RADIO = 1
@@ -204,7 +210,7 @@ class PageInfo:
         if not self.infobox:
             return None
         for argument in self.infobox.arguments:
-            if argument.name.strip() == "website":
+            if argument.name.strip().lower() in self.INFOBOX_SITE_FIELD:
                 self.radio_site = self.get_infobox_url(argument.value)
 
     def get_infobox_url(self, website_field):
