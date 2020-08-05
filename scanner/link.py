@@ -5,7 +5,10 @@ class LinkParser(HTMLParser):
 
     def parse_links(self, html_content):
         self.links = []
-        self.feed(html_content)
+        try:
+            self.feed(html_content)
+        except NotImplementedError:
+            pass
         return self.links
 
     def handle_starttag(self, tag, attrs):
