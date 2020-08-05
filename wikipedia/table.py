@@ -15,6 +15,8 @@ class RadioTable:
             "name",
             "call sign",
             "callsign",
+            "station",
+            "sendername",
             ]
     def __init__(self, data):
         self.radios = []
