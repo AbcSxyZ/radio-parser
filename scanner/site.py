@@ -1,6 +1,6 @@
 import requests
 from requests.exceptions import SSLError, ConnectionError, Timeout, \
-        TooManyRedirects
+        TooManyRedirects, InvalidSchema
 import urllib.parse as URLParse
 import os.path
 import re
@@ -204,7 +204,7 @@ class Site:
         try:
             response = requests.get(url, timeout=10, \
                     headers=self.HEADERS)
-        except (SSLError, ConnectionError, Timeout, TooManyRedirects) \
+        except (SSLError, ConnectionError, Timeout, TooManyRedirects, InvalidSchema) \
                 as Error:
             raise UrlException(f"{url}: {Error}")
         if response.status_code == 200:
