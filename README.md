@@ -6,8 +6,9 @@ Use a single wikipedia's [lists of radio stations](https://en.wikipedia.org/wiki
 `pip install -r requirements.txt`
 
 ## Syntax
-`radio_parser.py [-h] (--wiki-title title | --csv filename | --site site) [--verbose] [--workdir dir]`  
-Program perform a search from a wikipedia page title, a csv file (`*.template`), or a radio website.
+`usage: radio_parser.py [-h] (-w title | --radio-wiki radio | --csv filename | -s site) [-v] [--workdir dir] [-l wiki-language]`
+Program to perform a search from a wikipedia page title, a csv file (`*.template`), a radio website etc.
+See `--help` for available options.
 
 #### Examples
 `./radio_parser.py --wiki-title "List of radio stations in the United Kingdom"`  
