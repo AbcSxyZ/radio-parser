@@ -3,6 +3,7 @@
 from scanner.logger import LogRadio
 from scanner.site import Site
 from wikipedia.controller import SearchController
+from wikipedia.page import PageInfo
 from argparse import ArgumentParser
 from workdir import WorkingDirectory
 
@@ -24,6 +25,8 @@ and parse them to find contact email."""
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("-w", "--wiki-title", metavar="title",
             help="Wikipedia page with radio stations list")
+    group.add_argument("--radio-wiki", metavar="radio",
+            help="Wikipage of a radio station")
     group.add_argument("--csv", metavar="filename",
             help="csv file of radio list")
     group.add_argument("-s", "--site", metavar="site",
@@ -90,6 +93,10 @@ def parse_radio_site(url):
     print("Domain mail : {}".format(site.domain_mails))
     print("unknow mail : {}".format(site.unsure_mails))
 
+def parse_radio_wiki(radio_name, lang):
+    page = PageInfo(radio_name, lang, silent=VERBOSE==False)
+    print(f"Site of '{radio_name}' : {page.radio_site}")
+
 if __name__ == "__main__":
     ARGS = get_options()
     if ARGS.wiki_title:
@@ -98,4 +105,6 @@ if __name__ == "__main__":
         parse_radio_file(ARGS.csv)
     elif ARGS.site:
         parse_radio_site(ARGS.site)
+    elif ARGS.radio_wiki:
+        parse_radio_wiki(ARGS.radio_wiki, ARGS.lang)
 
