@@ -1,5 +1,5 @@
 # radio-parser
-Use a single wikipedia's [lists of radio stations](https://en.wikipedia.org/wiki/Category:Lists_of_radio_stations_by_country) pages to retrieve email contact of radios. Use wikipedia's list, retrieve available radio's wiki, and find their website through radio station infobox. For each search, generate 2 csv file, a `*.template` with info extracted radio site from wikipedia, and a `*.csv`, which store search result of radio websites with radio's mails.
+Use a single wikipedia's [lists of radio stations](https://en.wikipedia.org/wiki/Category:Lists_of_radio_stations_by_country) page to retrieve email contact of radios. Use wikipedia's list, retrieve available radio's wiki, and find their website through radio station infobox. For each search, generate 2 csv file, a `*.template` with info extracted radio site from wikipedia, and a `*.csv`, which store search result of radio websites with radio's mails.
 
 ## Installation
 ***Warning:*** Use python 3.6 or higher.  
