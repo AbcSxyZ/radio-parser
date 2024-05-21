@@ -1,4 +1,4 @@
 wikitextparser == 0.37.1
 wptools == 0.4.17
-requests == 2.31.0
+requests == 2.32.0
 
